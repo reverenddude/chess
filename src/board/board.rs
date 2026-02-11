@@ -1,3 +1,4 @@
+use std::array;
 use std::fmt;
 use std::fmt::Display;
 
@@ -16,25 +17,44 @@ impl Display for Square {
         if let Some(p) = &self.occupied {
             write!(f, "{}", p)
         } else {
-            write!(f, "   ")
+            write!(f, " ")
         }
     }
 }
 
 impl Board {
+    fn init() -> Self {
+        Self {
+            state: array::from_fn(|_| Square { occupied: None }),
+        }
+    }
+
     fn display(&self) {
         let mut rank: usize = 0;
-        println!(" --- --- --- --- --- --- --- --- ");
+        println!(" -------------------------- ");
         loop {
-            if rank >= 9 {
+            if rank >= 8 {
                 break;
             }
 
-            let row: &[Square] = &self.state[(rank * 8)..((rank + 1) * 8) - 1];
+            let id0 = rank * 8;
+            let idf = ((rank + 1) * 8) - 1;
+
+            // println!("Rank: {rank}\nStart Index: {id0}\nEnd Index: {idf}");
+
+            let row: &[Square] = &self.state[id0..idf];
+
+            let display: String = row
+                .iter()
+                .map(|p| format!(" {} ", p))
+                .collect::<Vec<String>>()
+                .join("|");
+
+            println!("{display}");
 
             rank += 1;
         }
-        println!(" --- --- --- --- --- --- --- --- ");
+        println!(" -------------------------- ");
     }
 }
 
@@ -44,13 +64,18 @@ mod test {
 
     #[test]
     fn test_display() {
-        let piece: Square = Square {
+        let square: Square = Square {
             occupied: Some(ChessPiece {
                 piece: Piece::Bishop,
                 color: Color::Black,
             }),
         };
 
-        println!("{piece}");
+        println!("{square}");
+
+        let mut board: Board = Board::init();
+        board.state[0] = square;
+        //
+        board.display();
     }
 }
