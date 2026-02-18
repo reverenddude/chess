@@ -9,7 +9,34 @@ pub struct ChessPiece {
 
 impl Display for ChessPiece {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.piece)
+        match self.color {
+            Color::White => write!(f, "{}", self.piece.as_str().to_uppercase()),
+            Color::Black => write!(f, "{}", self.piece.as_str()),
+        }
+    }
+}
+
+impl ChessPiece {
+    pub fn new(piece: Piece, color: Color) -> Self {
+        Self { piece, color }
+    }
+
+    pub fn from_str(p: char) -> Option<ChessPiece> {
+        match p {
+            'r' => Some(ChessPiece::new(Piece::Rook, Color::Black)),
+            'n' => Some(ChessPiece::new(Piece::Knight, Color::Black)),
+            'b' => Some(ChessPiece::new(Piece::Bishop, Color::Black)),
+            'q' => Some(ChessPiece::new(Piece::Queen, Color::Black)),
+            'k' => Some(ChessPiece::new(Piece::King, Color::Black)),
+            'p' => Some(ChessPiece::new(Piece::Pawn, Color::Black)),
+            'R' => Some(ChessPiece::new(Piece::Rook, Color::White)),
+            'N' => Some(ChessPiece::new(Piece::Knight, Color::White)),
+            'B' => Some(ChessPiece::new(Piece::Bishop, Color::White)),
+            'Q' => Some(ChessPiece::new(Piece::Queen, Color::White)),
+            'K' => Some(ChessPiece::new(Piece::King, Color::White)),
+            'P' => Some(ChessPiece::new(Piece::Pawn, Color::White)),
+            _ => None,
+        }
     }
 }
 
@@ -23,15 +50,15 @@ pub enum Piece {
     King,
 }
 
-impl Display for Piece {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+impl Piece {
+    fn as_str(&self) -> &str {
         match self {
-            Self::Pawn => write!(f, "P"),
-            Self::Knight => write!(f, "N"),
-            Self::Bishop => write!(f, "B"),
-            Self::Rook => write!(f, "R"),
-            Self::Queen => write!(f, "Q"),
-            Self::King => write!(f, "K"),
+            Piece::Pawn => "p",
+            Piece::Knight => "n",
+            Piece::Bishop => "b",
+            Piece::Rook => "r",
+            Piece::Queen => "q",
+            Piece::King => "k",
         }
     }
 }
@@ -40,4 +67,14 @@ impl Display for Piece {
 pub enum Color {
     Black,
     White,
+}
+
+impl Color {
+    pub fn from_str(s: &str) -> Self {
+        match s.to_lowercase().as_str() {
+            "w" => Self::White,
+            "b" => Self::Black,
+            _ => panic!("Invalid color option provided: {}", s),
+        }
+    }
 }
