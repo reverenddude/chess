@@ -16,15 +16,15 @@ pub struct GameState {
 
 impl Display for GameState {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.board.display();
         write!(
             f,
-            "Side to Move: {:?}\nCastling Ability: {:?}\nEnPassant Target: {:?}\nHalfmove Clock: {:?}\nFullmove Counter: {:?}",
+            "Side to Move: {:?}\nCastling Ability: {:?}\nEnPassant Target: {:?}\nHalfmove Clock: {:?}\nFullmove Counter: {:?}\n\n{}",
             self.side_to_move,
             self.castling_ability,
             self.en_passant_target_square,
             self.halfmove_clock,
-            self.fullmove_counter
+            self.fullmove_counter,
+            self.board,
         )
     }
 }
@@ -40,7 +40,7 @@ impl GameState {
         assert_eq!(fen_sections.len(), 6);
 
         let piece_placement = fen_sections[0];
-        let board: Board = Board::from_fen_string(piece_placement);
+        let board: Board = Board::from_fen_str(piece_placement);
 
         let side_to_move = Color::from_str(fen_sections[1]);
         let castling_ability = fen_sections[2].to_string();
@@ -60,121 +60,111 @@ impl GameState {
 }
 
 pub struct Board {
-    board: [Square; 64],
+    white_pawns: u64,
+    white_knights: u64,
+    white_bishops: u64,
+    white_rooks: u64,
+    white_queens: u64,
+    white_king: u64,
+
+    black_pawns: u64,
+    black_knights: u64,
+    black_bishops: u64,
+    black_rooks: u64,
+    black_queens: u64,
+    black_king: u64,
 }
 
-pub struct Square {
-    pub occupied: Option<ChessPiece>,
-}
-
-impl Display for Square {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        if let Some(p) = &self.occupied {
-            write!(f, "{}", p)
-        } else {
-            write!(f, " ")
-        }
-    }
-}
-
-impl Square {
-    fn new(occupied: Option<ChessPiece>) -> Self {
-        Self { occupied }
+impl Display for Board {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "White Pawns:\n{:#066b}
+White Knights:\n{:#066b}
+White Bishops:\n{:#066b}
+White Rooks:\n{:#066b}
+White Queens:\n{:#066b}
+White Kings:\n{:#066b}
+Black Pawns:\n{:#066b}
+Black Knights:\n{:#066b}
+Black Bishops:\n{:#066b}
+Black Rooks:\n{:#066b}
+Black Queens:\n{:#066b}
+Black Kings:\n{:#066b}
+            ",
+            self.white_pawns,
+            self.white_knights,
+            self.white_bishops,
+            self.white_rooks,
+            self.white_queens,
+            self.white_king,
+            self.black_pawns,
+            self.black_knights,
+            self.black_bishops,
+            self.black_rooks,
+            self.black_queens,
+            self.black_king
+        )
     }
 }
 
 impl Board {
     fn init() -> Self {
         Self {
-            board: array::from_fn(|_| Square { occupied: None }),
+            white_pawns: 0u64,
+            white_knights: 0u64,
+            white_bishops: 0u64,
+            white_rooks: 0u64,
+            white_queens: 0u64,
+            white_king: 0u64,
+            black_pawns: 0u64,
+            black_knights: 0u64,
+            black_bishops: 0u64,
+            black_rooks: 0u64,
+            black_queens: 0u64,
+            black_king: 0u64,
         }
     }
 
-    ///https://www.chessprogramming.org/Forsyth-Edwards_Notation
-    ///
-    /// Starting FEN String
-    ///
-    /// `Piece Placement` `Color to Move` `Enpassant Target Square` `Castling Ability` `Halftime Clock` `Fullmove Counter`
-    /// rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
-    ///
-    /// Starts from the top left square and moves across the files
-    /// to the next rank.
-    ///
-    /// Numbers denote empty spaces
-    ///
-    /// Upper Case = White, Lower Case = Black
-    pub fn from_fen_string(fen_str: &str) -> Self {
+    fn from_fen_str(fen_str: &str) -> Self {
+        let mut board = Self::init();
+
         let fen_str: Vec<&str> = fen_str.split(" ").collect();
 
         let piece_placement = fen_str[0];
-
-        let mut board: Board = Board::init();
 
         let mut idx: usize = 0;
         for row in piece_placement.split("/") {
             let characters: Vec<char> = row.chars().collect();
             // println!("{:?}", characters);
             for e in characters {
-                if e.is_alphabetic() {
-                    board.board[idx] = Square::new(ChessPiece::from_str(e));
-                    idx += 1;
-                } else {
-                    let empty_count: u32 = e.to_digit(10).unwrap();
-                    for _ in 0..empty_count {
-                        board.board[idx] = Square::new(None);
-                        idx += 1;
+                match e {
+                    'P' => board.white_pawns |= 1u64 << idx,
+                    'N' => board.white_knights |= 1u64 << idx,
+                    'B' => board.white_bishops |= 1u64 << idx,
+                    'R' => board.white_rooks |= 1u64 << idx,
+                    'Q' => board.white_queens |= 1u64 << idx,
+                    'K' => board.white_king |= 1u64 << idx,
+                    'p' => board.black_pawns |= 1u64 << idx,
+                    'n' => board.black_knights |= 1u64 << idx,
+                    'b' => board.black_bishops |= 1u64 << idx,
+                    'r' => board.black_rooks |= 1u64 << idx,
+                    'q' => board.black_queens |= 1u64 << idx,
+                    'k' => board.black_king |= 1u64 << idx,
+                    _ => {
+                        idx += e.to_digit(10).unwrap() as usize;
+                        continue;
                     }
                 }
+                idx += 1;
             }
         }
-
         board
-    }
-
-    fn display(&self) {
-        let mut rank: usize = 0;
-        println!(" ----------------------------- ");
-        loop {
-            if rank >= 8 {
-                break;
-            }
-
-            let id0 = rank * 8;
-            let idf = (rank + 1) * 8;
-
-            // println!("Rank: {rank}\nStart Index: {id0}\nEnd Index: {idf}");
-
-            let row: &[Square] = &self.board[id0..idf];
-
-            let display: String = row
-                .iter()
-                .map(|p| format!(" {} ", p))
-                .collect::<Vec<String>>()
-                .join("|");
-
-            println!("{display}");
-
-            rank += 1;
-        }
-        println!(" ----------------------------- ");
     }
 }
 
 mod test {
     use super::*;
-    use crate::pieces::types::{Color, Piece};
-
-    #[test]
-    #[ignore = ""]
-    fn test_display() {
-        let fen_str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-        let board = Board::from_fen_string(fen_str);
-        board.display();
-
-        let fen_str = "rnbqkbnr/pp1ppppp/8/2p5/4P3/5N2/PPPP1PPP/RNBQKB1R b KQkq - 1 2";
-        let board = Board::from_fen_string(fen_str);
-        board.display();
-    }
 
     #[test]
     fn build_game() {
